@@ -14,8 +14,6 @@
   "author": "Amazon.com",
   "license": "Apache-2.0",
   "dependencies": {
-    "alexa-sdk": "^1.0.0",
-    "es6-promise": "^4.0.5",
-    "isomorphic-fetch": "^2.2.1"
+    "alexa-sdk": "^1.0.0"
   }
 }
