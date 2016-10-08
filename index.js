@@ -57,8 +57,14 @@ var handlers = {
 
 
         if(!gripe && category) {
-            this.attributes['speechOutput'] = 'What part of ' + category + ' do you want to gripe about?';
-            this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What part of ' + category + 'do you want to gripe about?';
+            if(category === 'love life' || 'relationship') {
+                this.attributes['speechOutput'] = 'What part of your ' + category + ' do you want to gripe about?';
+                this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What part of your ' + category + 'do you want to gripe about?';
+            } else {
+                this.attributes['speechOutput'] = 'What part  ' + category + ' do you want to gripe about?';
+                this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What part of ' + category + 'do you want to gripe about?';
+            }
+
             this.emit(':ask', this.attributes['speechOutput'], this.attributes['repromptSpeech']);
         }
 
