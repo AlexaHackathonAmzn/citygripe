@@ -57,22 +57,30 @@ var handlers = {
 
 
         if(!gripe && category) {
-            if(category === 'love life' || 'relationship') {
-                this.attributes['speechOutput'] = 'What part of your ' + category + ' do you want to gripe about?';
-                this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What part of your ' + category + 'do you want to gripe about?';
-            } else {
-                this.attributes['speechOutput'] = 'What part  ' + category + ' do you want to gripe about?';
-                this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What part of ' + category + 'do you want to gripe about?';
-            }
+           if(category === 'love life' || category === 'relationship') {
+             this.attributes['speechOutput'] = 'Are you interested in men or women?';
+             this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. Are you interested in men or women?';
+           } else if (category === 'job' || category === 'commute') {
+               this.attributes['speechOutput'] = 'What part of your ' + category + ' do you want to gripe about?';
+               this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What part of your ' + category + 'do you want to gripe about?';
+           } else {
+             // Weather, Nature
+               this.attributes['speechOutput'] = 'What about the ' + category + ' do you want to gripe about?';
+               this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What part of ' + category + 'do you want to gripe about?';
+           }
 
-            this.emit(':ask', this.attributes['speechOutput'], this.attributes['repromptSpeech']);
+           this.emit(':ask', this.attributes['speechOutput'], this.attributes['repromptSpeech']);
         }
 
         if(gripe && !category) {
-            this.attributes['speechOutput'] = 'What is too ' + gripe + '? You can pick job, weather, love life, commute, or nature.';
-            this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What is too ' + gripe + '? You can pick job, weather, love life, commute, or nature.';
-            this.emit(':ask', this.attributes['speechOutput'], this.attributes['repromptSpeech']);
-        }
+            if(gripe.toLowerCase() === 'men' || gripe.toLowerCase() === 'women' || gripe.toLowerCase() === 'woman') {
+                relationshipGripe(gripe);
+            } else {
+                this.attributes['speechOutput'] = 'What about ' + gripe + '? You can pick job, weather, love life, commute, or nature.';
+                this.attributes['repromptSpeech'] = 'I\'m sorry, I didn\'t catch that. What is too ' + gripe + '? You can pick job, weather, love life, commute, or nature.';
+                this.emit(':ask', this.attributes['speechOutput'], this.attributes['repromptSpeech']);
+            }
+       }
 
         if(!gripe && !category) {
             this.attributes['speechOutput'] = 'I\'m sorry, I don\'t  understand the gripe. Please try rephrasing.';
@@ -84,6 +92,9 @@ var handlers = {
             if(category === "love life" || category === "relationship") {
                 relationshipGripe(gripe);
 
+            } else if (category === "commute") {
+
+                commuteGripe();
             } else {
 
                 this.attributes['speechOutput'] = 'Oh, I hate ' + gripe + ' too. You should move to Seattle';
@@ -92,6 +103,64 @@ var handlers = {
         }
 
         var self = this;
+
+        function commuteGripe() {
+            http.get('http://api.census.gov/data/2015/acs1?get=NAME,B08136_002E,B08015_001E&for=county:*&in=state:*&key=75fc172bae13c20d3e52aca76885f3db7a12075a', function(res) {
+                var string = '';
+                res.on('data', function(chunk) {
+                    string += chunk;
+                });
+
+                res.on('end', function() {
+                    var json = JSON.parse(string);
+                    var array = Object.keys(json).map(function(key) {
+                        return json[key];
+                    });
+                    array = array.filter(function(element, index, array) {
+                      return element[1] !== null;
+                    });
+
+                    var ran = Math.floor(Math.random() * 2);
+                    if(ran) {
+                      var good = array.reduce(function(good, element, index) {
+
+                        if(element[1]/element[2] < 20) {
+                          good.push(element);
+                          return good;
+                        }
+                        return good;
+                      }, []);
+
+                      var ran = Math.floor(Math.random() * good.length);
+                      var county = good[ran];
+                      var commute = Math.floor(parseInt(county[1])/parseInt(county[2]));
+                      debugger;
+                      self.attributes['speechOutput'] = 'You could always move to ' + county[0] + ' where the average commute is only ' + commute + ' minutes.';
+                      self.emit(':tell', self.attributes['speechOutput']);
+                    } else {
+
+                      var bad = array.reduce(function(bad, element, index) {
+
+                        if(element[1]/element[2] > 40) {
+                          bad.push(element);
+                          return bad;
+                        }
+                        return bad;
+                      }, []);
+
+                      var ran = Math.floor(Math.random() * bad.length);
+                      var county = bad[ran];
+                      var commute = Math.floor(parseInt(county[1])/parseInt(county[2]));
+                      debugger;
+                      self.attributes['speechOutput'] = 'At least you don\'t live in ' + county[0] + ' where the average commute is more than ' + commute + ' minutes!';
+                      self.emit(':tell', self.attributes['speechOutput']);
+
+                    }
+                });
+
+            }).on('error', function(e) {
+            }).end();
+        }
 
         function relationshipGripe(gripe) {
 
@@ -111,7 +180,7 @@ var handlers = {
                     var ran = Math.floor(Math.random() * array.length);
                     var county = array[ran];
                     console.log('hello', county);
-                    if(gripe === 'women') {
+                    if(gripe === 'women' || gripe === 'woman') {
                         var womenTotal = parseInt(county[4]) + parseInt(county[5]) + parseInt(county[6]);
                         self.attributes['speechOutput'] = 'You could always move to ' + county[0] + ' where there is ' + womenTotal + ' single women.';
                         self.emit(':tell', self.attributes['speechOutput']);
